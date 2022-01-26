@@ -71,3 +71,89 @@ We can even check the amount of disk space used by users inside the database usi
 
 select owner, sum(bytes)/1024/1024 Size_MB from dba_segments
 group  by owner;
+
+
+
+
+
+
+
+We can use the below Query to check table size in oracle
+
+For oracle table size in MB
+
+select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024,2) as "Object Size (Mb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where segment_name=’<table_name>’
+and owner='<Table owner>';
+For oracle table size in GB
+
+select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where segment_name=’<table_name>’
+and owner='<Table owner>'
+and owner='<Table owner>';
+If you don’t have access to dba_segments, then you can use user_segments also
+
+For the size in MB
+
+select segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024,2) as "Object Size (Mb)"
+, tablespace_name as "Tablespace"
+from user_segments
+where segment_name=’<table_name>’
+For the size in GB
+
+select
+segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from user_segments
+where segment_name=’<table_name>’;
+we can also use this query to find the top ten biggest tables in a particular schema or tablespace
+
+Top 10 big tables in Particular schema
+
+select * from (select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where owner=’<schema>’  and segment_type='TABLE' order by 4 desc)  where rownum < 11;
+Top 10 big tables in Particular tablespace
+
+select * from (select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where tablespace_name =’<tablespace name>' and segment_name='TABLE' order by 4 desc ) where rownum <11;
+List tables bigger than 10G
+
+select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where segment_type='TABLE' where bytes/1024/1024/1024 >10  order by 4 desc;
+
+
+
