@@ -48,7 +48,7 @@ TRUNCATE TABLE quotations CASCADE;
 
 
 
-select 'alter table '||owner||'.'||table_name||' disable constraint '||constraint_name||';' from user_constraints;
+select 'alter table '||owner||'.'||table_name||' disable constraint '||constraint_name||';' from dba_constraints;
  
 
  
@@ -56,7 +56,7 @@ select 'alter table '||owner||'.'||table_name||' disable constraint '||constrain
 To enable all constraints, use the following script.
 
  
-
+select 'alter table '||owner||'.'||table_name||' enable constraint '||constraint_name||';' from dba_constraints;
 
 *********************************************************************************************************************
 
