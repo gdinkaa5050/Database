@@ -1,0 +1,8 @@
+Someone or some process using that id coming from omsdp140fe is providing an incorrect password, so after 10 failed login attempts it locks the account. 
+You need to identify what process or person is providing the incorrect password or it will continue to lock as you can see by the 1017 return code, 
+once it reached the max of 10 failed attempts it locks and you start getting a 28000 returncode that the account is locked.
+
+SQL> select username, userhost, timestamp, returncode from dba_audit_trail where username = 'DPAC001' and returncode = '1017' order by timestamp desc
+2 ;
+
+select username, userhost, timestamp, returncode from dba_audit_trail where username = 'DPAC001' and returncode = '28000' order by timestamp desc
