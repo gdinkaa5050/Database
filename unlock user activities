@@ -6,3 +6,63 @@ SQL> select username, userhost, timestamp, returncode from dba_audit_trail where
 2 ;
 
 select username, userhost, timestamp, returncode from dba_audit_trail where username = 'DPAC001' and returncode = '28000' order by timestamp desc
+
+
+
+
+
+Why Oracle User is Locked, Who is Locking Oracle User
+dbtut March 9, 2019 ORACLE
+
+ 
+
+If an oracle user is locked, it is usually caused by an incorrect password entry. In some cases, even if you remove the user’s lock with the help of the following script it will lock again after a while.
+
+SQL> alter user ADURUOZ account unlock;
+
+User altered.
+1
+2
+3
+SQL> alter user ADURUOZ account unlock;
+ 
+User altered.
+This is usually due to an application server that attempts to log in with the old password.
+
+You can use the following script to find out why the Oracle user is locked.
+
+
+SELECT
+  TO_CHAR(TIMESTAMP,'MM/DD HH24:MI') TIMESTAMP,
+  SUBSTR(OS_USERNAME,1,20) OS_USERNAME,
+  SUBSTR(USERNAME,1,20) USERNAME,
+  SUBSTR(TERMINAL,1,20) TERMINAL,
+  ACTION_NAME,
+  RETURNCODE,
+   OS_USERNAME,
+   USERNAME,
+   USERHOST  
+FROM
+  SYS.DBA_AUDIT_SESSION
+WHERE
+  USERNAME LIKE '%write_locked_oracle_user_name_here_or_remove_this_line_for_all_users%'
+  AND TIMESTAMP BETWEEN SYSDATE-1 AND SYSDATE
+ORDER BY
+  TIMESTAMP DESC;
+You can also use the following script to find out when User is locked.
+
+SQL> col profile for a30
+SQL> col username for a30
+SQL> col account_status for a20
+SQL> SELECT username, account_status,lock_date, PROFILE FROM dba_users WHERE username='write_your_locked_user_name';
+
+USERNAME		       ACCOUNT_STATUS	    LOCK_DATE	       PROFILE
+------------------------------ -------------------- ------------------ ------------------------------
+your_user_name	               LOCKED(TIMED)	    29-MAY-17	       DEFAULT
+
+If the RETURNCODE value in the query is 1017, it means an incorrect password entry. Some important RETURNCODE values are as follows.
+
+RETURNCODE = 0 – Indicates successful login.
+RETURNCODE = 1017 – Indicates incorrect password entry.
+RETURNCODE = 28000 – Indicates that the user is locked.
+RETURNCODE = 28001 – Indicates that the user is expired.
