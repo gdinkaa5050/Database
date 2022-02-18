@@ -1,0 +1,50 @@
+Remove Table Fragmentation in Oracle
+Fragmentation causes database slowness and un-necessary storage space wastage. In this article I will show you how to find if a table is fragmented and then remove table fragmentation in Oracle.
+
+Gather Table Stats 
+
+Check Table Size 
+
+Remove Fragmentation 
+
+
+Gather Table Stats
+
+If you have recently gathered table stats, then skip to next step, else gather table stats
+
+EXEC dbms_stats.gather_table_stats(ownname => 'TABLE_OWNER', tabname => 'TABLE_NAME', cascade => true, estimate_percent => 10,method_opt=>'for all indexed columns size 1', granularity => 'ALL', degree => 1);
+
+
+Check Table Size
+
+Use below query to get table size from dba_segments
+
+select sum(bytes)/1024/1024/1024 from dba_segments where segment_name='&TABLE_NAME';
+Now find out actual table size, fragmentation size and fragmentation percentage using below query
+
+select table_name,avg_row_len,round(((blocks*16/1024)),2)||'MB' "TOTAL_SIZE",
+round((num_rows*avg_row_len/1024/1024),2)||'Mb' "ACTUAL_SIZE",
+round(((blocks*16/1024)-(num_rows*avg_row_len/1024/1024)),2) ||'MB' "FRAGMENTED_SPACE",
+(round(((blocks*16/1024)-(num_rows*avg_row_len/1024/1024)),2)/round(((blocks*16/1024)),2))*100 "percentage"
+from all_tables WHERE table_name='&TABLE_NAME';
+Note: Proceed with de-fragmentation only if you see percentage above 20%
+
+
+Remove Fragmentation
+
+Use below query to remove fragmentation from the table
+
+alter table <table_name> move;  
+Rebuild Indexes on Table
+
+alter index index_name rebuild online;
+Gather Stats Again
+
+EXEC dbms_stats.gather_table_stats(ownname => 'TABLE_OWNER', tabname => 'TABLE_NAME', cascade => true, estimate_percent => 10,method_opt=>'for all indexed columns size 1', granularity => 'ALL', degree => 1);
+Re-check fragmented space again
+
+select table_name,avg_row_len,round(((blocks*16/1024)),2)||'MB' "TOTAL_SIZE",
+round((num_rows*avg_row_len/1024/1024),2)||'Mb' "ACTUAL_SIZE",
+round(((blocks*16/1024)-(num_rows*avg_row_len/1024/1024)),2) ||'MB' "FRAGMENTED_SPACE",
+(round(((blocks*16/1024)-(num_rows*avg_row_len/1024/1024)),2)/round(((blocks*16/1024)),2))*100 "percentage"
+from all_tables WHERE table_name='&TABLE_NAME';
