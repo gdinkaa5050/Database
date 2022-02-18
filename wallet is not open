@@ -1,0 +1,42 @@
+fix wallet is not open
+*******************************
+
+alter system set tde_configuration="KEYSTORE_CONFIGURATION=FILE" SCOPE=BOTH;
+
+bounce database
+
+show parameter tde_configuration;
+show parameter wallet;
+
+select wrl_type,status,wrl_parameter from v$encryption_wallet;
+
+ALTER SYSTEM SET ENCRYPTION WALLET OPEN identified by ju5td0it;
+
+-- if not open,
+
+--cd to wallet_root location
+--mkdir tde
+--copy these files into tde
+    cwallet.sso
+    ewallet.p12
+
+--now
+
+ALTER SYSTEM SET ENCRYPTION WALLET OPEN identified by ju5td0it;
+--check status
+
+select wrl_type,status,wrl_parameter from v$encryption_wallet;
+
+to avoid reopening the wallet run the following
+*********************************************************
+exec dbms_scheduler.set_job_argument_value (job_name => 'wllt_chek_job',argument_position => 1,argument_value => '/software/oracle/admin/<xtst171n>/wallet');
+
+drop directory LOCKING_DIR;
+
+create directory LOCKING_DIR as '/oradata/<xtst171>/logs/lock_file_dir';
+
+alter table uprr_wllt_chek modify (location varchar2(100));
+
+--Run the job
+
+exec dbms_scheduler.run_job('wllt_chek_job');
