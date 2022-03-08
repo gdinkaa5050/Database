@@ -1,0 +1,41 @@
+SELECT name, value 
+  FROM v$parameter
+ WHERE name = 'sessions'
+The number of sessions currently active
+
+SELECT COUNT(*)
+  FROM v$session
+As I said, though, there are other potential limits both at the database level and at the operating system level and depending on whether shared server has been configured.
+If shared server is ignored, you may well hit the limit of the PROCESSES parameter before you hit the limit of the SESSIONS parameter. 
+And you may hit operating system limits because each session requires a certain amount of RAM.
+
+
+
+select current_utilization, limit_value 
+    from v$resource_limit 
+    where resource_name='sessions';
+CURRENT_UTILIZATION LIMIT_VALUE
+------------------- -----------
+                110         792
+Try this to show info about both:
+
+    select resource_name, current_utilization, max_utilization, limit_value 
+    from v$resource_limit 
+    where resource_name in ('sessions', 'processes');
+    
+    
+    
+    select count(*),sum(decode(status, 'ACTIVE',1,0)) from v$session where type= 'USER'
+    
+    
+    
+    
+    SELECT
+  'Currently, ' 
+  || (SELECT COUNT(*) FROM V$SESSION)
+  || ' out of ' 
+  || VP.VALUE 
+  || ' connections are used.' AS USAGE_MESSAGE
+FROM 
+  V$PARAMETER VP
+WHERE VP.NAME = 'sessions';
