@@ -1,3 +1,8 @@
+select username, machine, program, module, LOGON_TIME
+from v$session where type = 'USER';
+
+******************************************************************************************
+
 SELECT SID, Serial#, UserName, Status, SchemaName, Logon_Time
 FROM V$Session
 WHERE
