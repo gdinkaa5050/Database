@@ -1,0 +1,64 @@
+SELECT SID, Serial#, UserName, Status, SchemaName, Logon_Time
+FROM V$Session
+WHERE
+Status=‘ACTIVE’ AND
+UserName IS NOT NULL;
+
+
+
+select sid,
+      serial#,
+      osuser,
+      machine,
+      program,
+      module
+from v$session
+
+
+
+select
+       substr(a.spid,1,9) pid,
+       substr(b.sid,1,5) sid,
+       substr(b.serial#,1,5) ser#,
+       substr(b.machine,1,6) box,
+       substr(b.username,1,10) username,
+--       b.server,
+       substr(b.osuser,1,8) os_user,
+       substr(b.program,1,30) program
+from v$session b, v$process a
+where
+b.paddr = a.addr
+and type='USER'
+order by spid; 
+
+
+
+
+select s.sid as "Sid", s.serial# as "Serial#", nvl(s.username, ' ') as "Username", s.machine as "Machine", s.schemaname as "Schema name", s.logon_time as "Login time", s.program as "Program", s.osuser as "Os user", s.status as "Status", nvl(s.process, ' ') as "OS Process id"
+from v$session s
+where nvl(s.username, 'a') not like 'a' and status like 'ACTIVE'
+order by 1,2
+
+
+
+select
+  username,
+  osuser,
+  terminal,
+  utl_inaddr.get_host_address(terminal) IP_ADDRESS
+from
+  v$session
+where
+  username is not null
+order by
+  username,
+  osuser;
+  
+  
+  select 
+    count(1) "NO. Of DB Users", 
+    to_char(sysdate,'DD-MON-YYYY:HH24:MI:SS') sys_time
+from 
+    v$session 
+where 
+    username is NOT  NULL;
