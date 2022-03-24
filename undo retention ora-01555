@@ -1,0 +1,10 @@
+make sure undo_management parameter is set to auto.
+
+undo_retension parameter has a proper value. preferable more than the longest running query in the database.
+
+select max(maxquerylen) from v$undostats;
+
+show parameter undo;
+
+select to_char(begin_time, 'DD-MON HH24:MI') begin_time, to_char(end_time, 'DD-MON HH24:MI') end_time, undoblks,
+txncount, maxconcurrency, activeblks, expiredblks, tuned_undoretention, maxquerylen from v$undostat order by begin_time;
