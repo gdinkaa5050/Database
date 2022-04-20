@@ -39,3 +39,88 @@ Try this to show info about both:
 FROM 
   V$PARAMETER VP
 WHERE VP.NAME = 'sessions';
+
+
+*************************************************
+
+sql> show parameter sessions;
+
+sql> show parameter processes;
+
+sql> show parameter transactions;
+
+OR
+
+select name, value
+from v$spparameter
+where name in (‘sessions’,’processes’,’transactions’);
+
+If you are planning to increase "PROCESSES" parameter you should also plan to increase "sessions and "transactions" parameters
+A basic formula for determining these parameter values is as follows:
+
+PROCESSES = Operating System Dependant
+
+SESSIONS = (1.1 * PROCESSES) + 5
+
+TRANSACTIONS = 1.1 * SESSIONS
+
+ 
+
+For example, if processes are 100, then sessions will be 115 and transactions will be 127.
+
+To alter the sessions,transactions, processes follow this procedure –
+1. At command line, type sqlplus
+2. For username give / as sysdba
+3. Give the following commands –
+alter system set sessions=400 scope=spfile;
+alter system set processes=350 scope=spfile;
+alter system set transactions=440 scope=spfile;
+Give the values according to the requirement
+4. After running these commands, you need to restart the Oracel instance, follow these commands
+shutdown immediate;
+startup;
+5. After startup is complete run the following commands to see the updated values
+
+select name, value
+from v$spparameter
+where name in (‘sessions’,’processes’,’transactions’);sql> show parameter sessions;
+
+sql> show parameter processes;
+
+sql> show parameter transactions;
+
+OR
+
+select name, value
+from v$spparameter
+where name in (‘sessions’,’processes’,’transactions’);
+
+If you are planning to increase "PROCESSES" parameter you should also plan to increase "sessions and "transactions" parameters
+A basic formula for determining these parameter values is as follows:
+
+PROCESSES = Operating System Dependant
+
+SESSIONS = (1.1 * PROCESSES) + 5
+
+TRANSACTIONS = 1.1 * SESSIONS
+
+ 
+
+For example, if processes are 100, then sessions will be 115 and transactions will be 127.
+
+To alter the sessions,transactions, processes follow this procedure –
+1. At command line, type sqlplus
+2. For username give / as sysdba
+3. Give the following commands –
+alter system set sessions=400 scope=spfile;
+alter system set processes=350 scope=spfile;
+alter system set transactions=440 scope=spfile;
+Give the values according to the requirement
+4. After running these commands, you need to restart the Oracel instance, follow these commands
+shutdown immediate;
+startup;
+5. After startup is complete run the following commands to see the updated values
+
+select name, value
+from v$spparameter
+where name in (‘sessions’,’processes’,’transactions’);
