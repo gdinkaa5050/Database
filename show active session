@@ -6,7 +6,7 @@ from v$session where type = 'USER';
 SELECT SID, Serial#, UserName, Status, SchemaName, Logon_Time
 FROM V$Session
 WHERE
-Status=‘ACTIVE’ AND
+Status='ACTIVE' AND
 UserName IS NOT NULL;
 
 
