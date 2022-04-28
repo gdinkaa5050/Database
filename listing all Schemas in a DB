@@ -1,0 +1,37 @@
+SELECT username
+  FROM dba_users
+That will show you all the users in the system (and thus all the potential schemas). If your definition of "schema" allows for a schema to be empty, that's what you want. However, there can be a semantic distinction where people only want to call something a schema if it actually owns at least one object so that the hundreds of user accounts that will never own any objects are excluded. In that case
+
+SELECT username
+  FROM dba_users u
+ WHERE EXISTS (
+    SELECT 1
+      FROM dba_objects o
+     WHERE o.owner = u.username )
+Assuming that whoever created the schemas was sensible about assigning default tablespaces and assuming that you are not interested in schemas that Oracle has delivered, you can filter out those schemas by adding predicates on the default_tablespace, i.e.
+
+SELECT username
+  FROM dba_users
+ WHERE default_tablespace not in ('SYSTEM','SYSAUX')
+or
+
+SELECT username
+  FROM dba_users u
+ WHERE EXISTS (
+    SELECT 1
+      FROM dba_objects o
+     WHERE o.owner = u.username )
+   AND default_tablespace not in ('SYSTEM','SYSAUX')
+   
+   
+   
+   select distinct owner 
+from dba_segments
+where owner in (select username from dba_users where default_tablespace not in ('SYSTEM','SYSAUX'));
+
+***********************************************************************************************************
+
+SQL> select username from dba_users;
+>> Will give you list of all users but all users may not have created objects in it. So we cannot call them as schema.
+>> SQL> select distinct owner from dba_objects;
+>> Will give you the list of schemas available.
