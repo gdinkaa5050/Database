@@ -25,3 +25,13 @@ DBA_AUDIT_TRAIL table records all the actions performed by the user based on lev
 
  SELECT  MAX(TIMESTAMP), A.USERNAME FROM DBA_AUDIT_TRAIL A WHERE ACTION_NAME = 'LOGON'
     GROUP BY USERNAME ORDER BY 1 DESC;
+    
+    
+    **************************************************
+    
+SELECT TO_CHAR(TIMESTAMP#,'MM/DD/YY HH:MI:SS') TIMESTAMP,USERID, b.NAME, ACTION FROM SYS.AUD$ a, SYS.AUDIT_ACTIONS b
+WHERE a.ACTION# = b.ACTION
+and b.name='LOGON'
+and userid in
+('&User_id')
+ORDER BY TIMESTAMP# DESC;
