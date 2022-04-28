@@ -1,0 +1,27 @@
+We have Oracle 11g so the following query didn’t work.
+
+select USERNAME,LAST_LOGIN from dba_users
+​
+Then I searched and people suggested multiple ways and i got confused. What is the correct way to get the last login date for all users in oracle 11g?
+
+select username, logon_time
+from v$session
+​
+or
+
+SELECT
+    username,
+    timestamp
+FROM
+    sys.dba_audit_session
+​
+or
+
+select username, timestamp
+from dba_audit_Trail 
+​
+Answer
+DBA_AUDIT_TRAIL table records all the actions performed by the user based on level of auditing enforced and it also records login and logoff time of every user which can be identified from action column.
+
+ SELECT  MAX(TIMESTAMP), A.USERNAME FROM DBA_AUDIT_TRAIL A WHERE ACTION_NAME = 'LOGON'
+    GROUP BY USERNAME ORDER BY 1 DESC;
