@@ -1,0 +1,21 @@
+select * from all_tab_modifications where table_name IN (--tablenames)
+'KNW_ATMT',
+'KNW_DOC',
+'KNW_DOC_RVSN',
+'KNW_DOC_RVSN_ATMT',
+'KNW_DOC_RVSN_CMNT',
+'KNW_DOC_RVSN_CNTC',
+'KNW_DOC_RVSN_DATA',
+'KNW_DOC_RVSN_LINK',
+'KNW_DOC_RVSN_TAG',
+'KNW_DOC_TYPE',
+'KNW_DOC_TYPE_STAT',
+'KNW_DOMN',
+'KNW_GENL_PURP',
+'KNW_SRCH_JRNL',
+'KNW_TAG',
+'KNW_TAG_REL',
+'KNW_DOC_FDBK',
+'KNW_UI_USAG',
+'KNW_UI_USAG_ATTR'
+);
