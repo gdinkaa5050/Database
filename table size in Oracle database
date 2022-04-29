@@ -1,0 +1,161 @@
+For oracle table size in MB
+
+select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024,2) as "Object Size (Mb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where segment_name=’<table_name>’
+and owner='<Table owner>';
+For oracle table size in GB
+
+select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where segment_name=’<table_name>’
+and owner='<Table owner>'
+and owner='<Table owner>';
+If you don’t have access to dba_segments, then you can use user_segments also
+
+For the size in MB
+
+select segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024,2) as "Object Size (Mb)"
+, tablespace_name as "Tablespace"
+from user_segments
+where segment_name=’<table_name>’
+For the size in GB
+
+select
+segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from user_segments
+where segment_name=’<table_name>’;
+we can also use this query to find the top ten biggest tables in a particular schema or tablespace
+
+Top 10 big tables in Particular schema
+
+select * from (select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where owner=’<schema>’  and segment_type='TABLE' order by 4 desc)  where rownum < 11;
+Top 10 big tables in Particular tablespace
+
+select * from (select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where tablespace_name =’<tablespace name>' and segment_name='TABLE' order by 4 desc ) where rownum <11;
+List tables bigger than 10G
+
+select
+owner as "Schema"
+, segment_name as "Object Name"
+, segment_type as "Object Type"
+, round(bytes/1024/1024/1024,2) as "Object Size (Gb)"
+, tablespace_name as "Tablespace"
+from dba_segments
+where segment_type='TABLE' where bytes/1024/1024/1024 >10  order by 4 desc;
+Here is the query if you want to know space associated with the indexes on the table also
+
+with tables
+as
+(
+select segment_name tname, to_char(bytes/1024/1024,'999,999.99') table_size
+from user_segments
+where segment_type = 'TABLE'
+and segment_name not like 'BIN%'
+),
+indexes
+as
+(
+select table_name, index_name, scbp, rn,
+(select to_char(bytes/1024/1024,'999,999.99') from user_segments where segment_name = INDEX_NAME and segment_type = 'INDEX') index_size
+from (
+select table_name, index_name,
+substr( max(sys_connect_by_path( column_name, ', ' )), 3) scbp,
+row_number() over (partition by table_name order by index_name) rn
+from user_ind_columns
+start with column_position = 1
+connect by prior table_name = table_name
+and prior index_name = index_name
+and prior column_position+1 = column_position
+group by table_name, index_name
+)
+)
+select decode( nvl(rn,1), 1, tables.tname ) tname,
+decode( nvl(rn,1), 1, tables.table_size ) table_size,
+rn "INDEX#",
+indexes.scbp,
+indexes.index_name,
+indexes.index_size
+from tables, indexes
+where tables.tname = indexes.table_name(+)
+and tables.tname = '&1'
+order by tables.tname, indexes.rn
+/
+Sum of the size of table for a particular schema
+
+select owner,sum(bytes)/1024/1024/1024 as "SIZE in GB" from dba_segments where owner='SCHEMA_NAME' and segment_type='TABLE' group by owner;
+The above queries will provide the space allocated in the database. If you are interested in row space consumed by the table, you can use below query
+
+select round((num_rows*avg_row_len/1024),2) used_space_bytes from dba_tables where table_name ='<table name>'
+and table_owner='<table owner';
+This query should be run after the statistics are generated for the table.
+
+If you are interested in the space usage of the table over a period of time or object growth trend, you can use the below query
+
+select * from table(dbms_space.OBJECT_GROWTH_TREND('<table owner>','<table name>','TABLE'));
+
+Example
+SQL> select * from table(dbms_space.OBJECT_GROWTH_TREND('SCOTT','EMP_DATA','TABLE'));
+TIMEPOINT SPACE_USAGE SPACE_ALLOC QUALITY
+---------------------- ---------- ------------ --------
+05-JUN-19 08.59.45.214446 AM 210979117 225829120 INTERPOLATED
+06-JUN-19 08.59.45.214446 AM 210979117 225829120 INTERPOLATED
+07-JUN-19 08.59.45.214446 AM 210979117 225829120 INTERPOLATED
+How to calculate the Size for the table containing LOB segments
+
+select from the BYTES column in DBA_SEGMENTS for the table shows the table segment but does not include LOB (CLOB or BLOB) segments sizes.
+To calculate the total size for the table and the associated LOBS segments a sum of the following must occur:
+the bytes for the table => from dba_segments
++
+the bytes for the LOB segments => from dba_lobs and dba_segments where segment_type is LOBSEGMENT
++
+the bytes for the LOB Index (Lob Locator) = from dba_indexes and dba_segments
+
+We can use the below query to calculate the total size
+
+ACCEPT SCHEMA PROMPT 'Table Owner: '
+ACCEPT TABNAME PROMPT 'Table Name: '
+SELECT
+(SELECT SUM(S.BYTES)
+FROM DBA_SEGMENTS S
+WHERE S.OWNER = UPPER('&SCHEMA') AND
+(S.SEGMENT_NAME = UPPER('&TABNAME'))) +
+(SELECT SUM(S.BYTES)
+FROM DBA_SEGMENTS S, DBA_LOBS L
+WHERE S.OWNER = UPPER('&SCHEMA') AND
+(L.SEGMENT_NAME = S.SEGMENT_NAME AND L.TABLE_NAME = UPPER('&TABNAME') AND L.OWNER = UPPER('&SCHEMA'))) +
+(SELECT SUM(S.BYTES)
+FROM DBA_SEGMENTS S, DBA_INDEXES I
+WHERE S.OWNER = UPPER('&SCHEMA') AND
+(I.INDEX_NAME = S.SEGMENT_NAME AND I.TABLE_NAME = UPPER('&TABNAME') AND INDEX_TYPE = 'LOB' AND I.OWNER = UPPER('&SCHEMA')))
+"TOTAL TABLE SIZE"
+FROM DUAL;
