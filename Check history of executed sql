@@ -1,0 +1,50 @@
+1. Get latest query
+select sql_text from v$sql where first_load_time=(select max(first_load_time) from v$sql)
+
+2. Sort executed queries by load time
+select sql_text, first_load_time from v$sql order by first_load_time desc
+
+3. Get executed queries in a schema which have special text and sort by load time
+select * from v$sql
+where parsing_schema_name like 'YOUR_SCHEMA' and sql_text like '%YOUR_TEXT%'
+order by first_load_time desc
+
+4. Get 100 last executed queries
+select sql_fulltext from
+(select * from v$sql where parsing_schema_name like 'VHA' order by first_load_time desc)
+where rownum < 101
+
+5. Get 100 executed UPDATE or DELETE queries in a specific time period and sort by load time
+select sql_text,sql_fulltext, first_load_time, parsing_schema_name from
+(
+  select * from v$sql
+  where parsing_schema_name like 'YOUR_SCHEMA'
+    and (sql_text like '%UPDATE %' or sql_text like '%INSERT %')
+    and to_timestamp(first_load_time, 'YYYY-MM-DD/HH24:MI:SS') > to_timestamp('2012-09-27/14:06:00', 'YYYY-MM-DD/HH24:MI:SS')
+  order by first_load_time desc
+)
+where rownum < 101
+
+
+
+*****************************
+For recent SQL:
+
+select * from v$sql
+For history:
+
+select * from dba_hist_sqltext
+
+
+
+SELECT * FROM V$SQL V where  to_date(v.FIRST_LOAD_TIME,'YYYY-MM-DD hh24:mi:ss') > sysdate - 60
+
+
+
+
+
+select a.instance_number inst_id, a.snap_id,a.plan_hash_value, to_char(begin_interval_time,'dd-mon-yy hh24:mi') btime, abs(extract(minute from (end_interval_time-begin_interval_time)) + extract(hour from (end_interval_time-begin_interval_time))*60 + extract(day from (end_interval_time-begin_interval_time))*24*60) minutes,
+executions_delta executions, round(ELAPSED_TIME_delta/1000000/greatest(executions_delta,1),4) "avg duration (sec)" from dba_hist_SQLSTAT a, dba_hist_snapshot b
+where sql_id='&sql_id' and a.snap_id=b.snap_id
+and a.instance_number=b.instance_number
+order by snap_id desc, a.instance_number;
