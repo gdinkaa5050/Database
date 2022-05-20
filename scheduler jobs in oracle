@@ -14,7 +14,17 @@ from ALL_SCHEDULER_JOB_LOG
 where log_id=113708;
 
 
+****************************************
+SELECT job_name, session_id, running_instance, elapsed_time, cpu_used FROM dba_scheduler_running_jobs;
 
+Also one can use the following view to find the history details of job that has run.
+
+SELECT job_name, log_date, status, actual_start_date, run_duration, cpu_used FROM dba_scheduler_job_run_details;
+
+To find the jobs that haven’t succeeded
+SELECT job_name, log_date, status, actual_start_date, run_duration, cpu_used FROM dba_scheduler_job_run_details where status ‘SUCCEEDED’;
+
+*******************************************
 Using the package DBMS_SCHEDULER one can enable/disable jobs.
 
 To disable job: This disables the job from running
