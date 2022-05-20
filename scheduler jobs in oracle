@@ -12,3 +12,26 @@ where job_name like 'RMAN_B%' and log_date > sysdate-2;
 select log_id,log_date, owner, job_name, status, ADDITIONAL_INFO 
 from ALL_SCHEDULER_JOB_LOG 
 where log_id=113708;
+
+
+
+Using the package DBMS_SCHEDULER one can enable/disable jobs.
+
+To disable job: This disables the job from running
+
+SQL> exec dbms_scheduler.disable(‘GATHER_STATS_JOB’);
+
+
+
+— check job status
+SQL> select job_name, enabled from DBA_SCHEDULER_JOBS WHERE job_name = ‘GATHER_STATS_JOB’;
+
+
+
+To enable job:
+SQL> exec dbms_scheduler.enable(‘GATHER_STATS_JOB’);
+
+
+
+— check job status
+SQL> select job_name, enabled from DBA_SCHEDULER_JOBS WHERE job_name = ‘GATHER_STATS_JOB’;
