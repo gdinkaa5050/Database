@@ -1,0 +1,86 @@
+Alter the value of PCTFREE & PCTUSED of the table
+PCTFREE: Minimum percentage of free space in a block; null for partitioned tables.
+PCTFREE is defined as the value which keep free in a block for future rows present in the block to avoid row chaining.
+Large value may improve update performance, because Oracle does not need to chain row pieces as frequently
+Default value of PCTFREE is 10. If you set less than that then depend upon update, it may cause row chaining in Oracle.
+
+PCTUSED: Minimum percentage of used space in a block; null for partitioned tables.
+PCTUSED is defined the value when block relink to freelist if data becomes less than that PCTUSED defined value in a table.
+If PCTUSED=40(default value) setting means that a block must become less than 40 percent full before being re-linked on the table free list.
+
+Recommendation:
+1. the value for PCTUSED should only be set above 40 when the database is short of disk space.
+2. lower the value for PCTUSED, the less I/O your system will have at insert time, and the faster your system will run.
+
+Note: Some basic point need to remember when need to change the PCTFREE and PCTUSED parameter for a table
+•The sum of PCTFREE and PCTUSED must be equal to or less than 100.
+•If the sum equals 100, then Oracle attempts to keep no more than PCTFREE free space, and processing costs are highest.
+•The smaller the difference between 100 and the sum of PCTFREE and PCTUSED (as in PCTUSED of 75, PCTFREE of 20), the more efficient space usage is, at some performance cost.
+
+Check existing value of PCTFREE and PCTUSED
+
+-- Generate DDL of Table where you got all PCTFREE and PCTUSED parameter set
+set heading off;
+set echo off;
+Set pages 999;
+set long 90000;
+select dbms_metadata.get_ddl('TABLE','TEST','TEST') from dual;
+
+CREATE TABLE "TEST"."TEST"
+( "ID" NUMBER
+) SEGMENT CREATION IMMEDIATE
+PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255
+NOCOMPRESS LOGGING
+STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
+PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+TABLESPACE "USERS";
+
+-- Check from the DBA_TABLES or USER_TABLES
+
+select table_name,pct_free,pct_used from user_tables where table_name='TEST';
+
+TABLE_NAME        PCT_FREE   PCT_USED
+--------------- ---------- ----------
+TEST                    30         40
+
+Alter the value of PCTUSED and PCTFREE
+
+--Change PCTFREE value
+ALTER TABLE test PCTFREE 30;
+
+--Change PCTUSED value
+ALTER Table test PCTUSED 10;
+
+--Change both in single command:
+ALTER TABLE emp PCTFREE 30 PCTUSED 60;
+
+Example check more details about block used in Oracle by table
+Find number of blocks used by table TEST.
+
+select dbms_rowid.rowid_block_number(rowid), count(*) from test group by dbms_rowid.rowid_block_number(rowid);
+
+DBMS_ROWID.ROWID_BLOCK_NUMBER(ROWID) COUNT(*)
+------------------------------------ ----------
+139 10
+
+Insert more 100 rows in table TEST, so more blocks used:
+
+begin
+for i in 1 .. 10000
+loop
+insert into test values ( i);
+end loop;
+commit;
+end;
+/
+
+Check number of blocks used by table TEST
+
+select dbms_rowid.rowid_block_number(rowid), count(*) from test group by dbms_rowid.rowid_block_number(rowid);
+
+DBMS_ROWID.ROWID_BLOCK_NUMBER(ROWID)   COUNT(*)
+------------------------------------ ----------
+                                 140        513
+                                 141        487
+                                 139         10
