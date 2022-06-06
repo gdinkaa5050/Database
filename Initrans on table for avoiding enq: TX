@@ -1,0 +1,66 @@
+--check if table have child tables with pk-fk relationship, if table have child table(s) then consider to change initrans also for child table(s)
+
+SQL> set linesize 500
+SQL> select *
+  from dba_constraints a, dba_constraints b
+ where a.constraint_name = b.r_constraint_name
+   and a.table_name = 'TABLE_NAME';
+
+no rows selected
+--check if Table have indexes, then you must rebuild indexes, and also change initrans for indexes.
+
+commands will be like:
+SQL> select table_name, INI_TRANS
+  from dba_tables
+ where table_name = 'TABLE_NAME';
+
+TABLE_NAME                      INI_TRANS
+------------------------------ ----------
+TABLE_NAME                              1
+
+SQL> SELECT table_name, index_name, status, ini_trans
+  FROM DBA_INDEXES
+ WHERE TABLE_NAME = 'TABLE_NAME'; 
+
+TABLE_NAME                     INDEX_NAME                     STATUS    INI_TRANS
+------------------------------ ------------------------------ -------- ----------
+TABLE_NAME                     TABLE_NAME_PK                  VALID             2
+TABLE_NAME                     TABLE_NAME_I1                  VALID             2
+
+SQL> ALTER TABLE TABLE_NAME MOVE INITRANS 10;
+
+Table altered.
+
+SQL> select table_name, INI_TRANS
+  from dba_tables
+ where table_name = 'TABLE_NAME';
+
+TABLE_NAME                      INI_TRANS
+------------------------------ ----------
+TABLE_NAME                             10
+
+SQL> SELECT table_name, index_name, status, ini_trans
+  FROM DBA_INDEXES
+ WHERE TABLE_NAME = 'TABLE_NAME';
+
+TABLE_NAME                     INDEX_NAME                     STATUS    INI_TRANS
+------------------------------ ------------------------------ -------- ----------
+TABLE_NAME                     TABLE_NAME_PK                  UNUSABLE          2
+TABLE_NAME                     TABLE_NAME_I1                  UNUSABLE          2
+
+SQL> ALTER INDEX TABLE_NAME_PK REBUILD INITRANS 20;
+
+Index altered.
+
+SQL> ALTER INDEX TABLE_NAME_I1 REBUILD INITRANS 20;
+
+Index altered.
+
+SQL> SELECT table_name, index_name, status, ini_trans
+  FROM DBA_INDEXES
+ WHERE TABLE_NAME = 'TABLE_NAME';
+
+TABLE_NAME                     INDEX_NAME                     STATUS    INI_TRANS
+------------------------------ ------------------------------ -------- ----------
+TABLE_NAME                     TABLE_NAME_PK                  VALID            20
+TABLE_NAME                     TABLE_NAME_I1                  VALID            20
