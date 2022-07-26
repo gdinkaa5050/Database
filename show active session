@@ -94,3 +94,84 @@ last_call_et "last call",status
 from v$session where status='ACTIVE'
 order by 1
 /
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+To find out which use is consuming most of memory you can use below query
+
+SELECT a.username, a.osuser, a.program, b.spid,b.pga_used_mem, a.sid, a.serial# ,a.module,a.logon_time,a.terminal FROM v$session a, v$process b WHERE a.paddr = b.addr
+order by
+b.pga_used_mem desc
+
+or you can use below filter to limit results to a specific user
+
+–a.username=’FARHAT’
+b.spid = ‘6956’;
+
+You can convert bytes into MBs using below command
+
+SELECT a.username, a.osuser, a.program, b.spid,b.pga_used_mem/1024/1024 “PGA USED (MB)”, a.sid, a.serial# ,a.module,a.logon_time,a.terminal FROM v$session a, v$process b WHERE a.paddr = b.addr
+order by
+b.pga_used_mem desc
+
+———————————————————
+
+CPU USAGE TRACKING
+
+Below query can identify user which is consuming more CPU Resources
+
+select 
+   ss.username,
+   se.SID,
+   VALUE/100 cpu_usage_seconds
+from
+   v$session ss, 
+   v$sesstat se, 
+   v$statname sn
+where
+   se.STATISTIC# = sn.STATISTIC#
+and
+   NAME like ‘%CPU used by this session%’
+and
+   se.SID = ss.SID
+and 
+   ss.status=’ACTIVE’
+and 
+   ss.username is not null
+
+order by VALUE desc;  
+
+
+After identifying culprit session you can kill it using Oracle commands or OS
+
+SELECT s.inst_id,
+       s.sid,
+       s.serial#,
+       p.spid,
+       s.username,
+       s.program
+FROM   gv$session s
+       JOIN gv$process p ON p.addr = s.paddr AND p.inst_id = s.inst_id
+WHERE  s.type != ‘BACKGROUND’;
+
+Kill the culprit session
+
+ALTER SYSTEM KILL SESSION
+
+The basic syntax for killing a session is shown below.
+
+SQL> ALTER SYSTEM KILL SESSION ‘sid,serial#’;
+
+In a RAC environment, you optionally specify the INST_ID, shown when querying the GV$SESSION view. This allows you to kill a session on different RAC node.
+
+SQL> ALTER SYSTEM KILL SESSION ‘sid,serial#,@inst_id’;
+
+The KILL SESSION command doesn’t actually kill the session. It merely asks the session to kill itself. In some situations, like waiting for a reply from a remote database or rolling back transactions, the session will not kill itself immediately and will wait for the current operation to complete. In these cases the session will have a status of “marked for kill”. It will then be killed as soon as possible.
+
+In addition to the syntax described above, you can add the IMMEDIATE clause.
+
+SQL> ALTER SYSTEM KILL SESSION ‘sid,serial#’ IMMEDIATE;
+
+This does not affect the work performed by the command, but it returns control back to the current session immediately, rather than waiting for confirmation of the kill.
+
+If the marked session persists for some time you may consider killing the process at the operating system level. Before doing this it’s worth checking to see if it is performing a rollback. You can do this by running this script (session_undo.sql). If the USED_UREC value is decreasing for the session in question you should leave it to complete the rollback rather than killing the session at the operating system level.
