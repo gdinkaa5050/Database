@@ -175,3 +175,50 @@ SQL> ALTER SYSTEM KILL SESSION ‘sid,serial#’ IMMEDIATE;
 This does not affect the work performed by the command, but it returns control back to the current session immediately, rather than waiting for confirmation of the kill.
 
 If the marked session persists for some time you may consider killing the process at the operating system level. Before doing this it’s worth checking to see if it is performing a rollback. You can do this by running this script (session_undo.sql). If the USED_UREC value is decreasing for the session in question you should leave it to complete the rollback rather than killing the session at the operating system level.
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+
+
+
+
+
+SELECT PROCESS pid, sess.process, sess.status, sess.username, sess.schemaname, sql.sql_text FROM v$session sess, v$sql sql WHERE sql.sql_id(+) = sess.sql_id AND sess.type = ‘USER’;
+
+Identify database SID based on OS Process ID
+use the following SQL query, when prompted enter the OS process PID:
+
+SET LINESIZE 100
+col sid format 999999
+col username format a20
+col osuser format a15
+SELECT b.spid,a.sid, a.serial#,a.username, a.osuser
+FROM v$session a, v$process b
+WHERE a.paddr= b.addr
+AND b.spid=’&spid’
+ORDER BY b.spid;
+
+For making sure you are targeting the correct session, you might want to review the SQL associated with the offensive task, to view the SQL being executed by the session you can use the following SQL statement:
+
+SELECT
+b.username, a.sql_text
+FROM
+v$sqltext_with_newlines a, v$session b, v$process c
+WHERE
+c.spid = ‘&spid’
+AND
+c.addr = b.paddr
+AND
+b.sql_address = a.address;
+
+Killing the session
+The basic syntax for killing a session is shown below.
+
+ALTER SYSTEM KILL SESSION ‘sid,serial#’;
+
+In a RAC environment, you optionally specify the INST_ID, shown when querying the GV$SESSION view. This allows you to kill a session on different RAC node.
+
+ALTER SYSTEM KILL SESSION ‘sid,serial#,@inst_id’;
+
+
+\
