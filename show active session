@@ -222,3 +222,21 @@ ALTER SYSTEM KILL SESSION ‘sid,serial#,@inst_id’;
 
 
 \
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+select status,count(*) from v$session group by status;
+
+SELECT sid, serial#, status, username FROM v$session where status='INACTIVE';
+
+
+SQL> ALTER SYSTEM KILL SESSION 'sid,serial#' IMMEDIATE;
+If you have multiple sessions for killing, you must prepare the script.
+
+Script for all sessions:
+
+SQL> SELECT 'ALTER SYSTEM KILL SESSION '''||sid||','||serial#||''' IMMEDIATE;' FROM v$session;
+The script only for Inactive sessions:
+
+SQL> SELECT 'ALTER SYSTEM KILL SESSION '''||sid||','||serial#||''' IMMEDIATE;' FROM v$session 
+     where status='INACTIVE';
