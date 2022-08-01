@@ -1,3 +1,30 @@
 SQL> administer key management create keystore '/u01/app/oracle/admin/orcl/wallet' identified by Welcome123;
 
 SQL> administer key management create auto_login keystore from keystore '/u01/app/oracle/admin/orcl/wallet' identified by Welcome123;
+
+
+
+ Remove  the auto-open wallet cwallet.sso
+
+1
+$mv cwallet.sso cwallet.sso.bkp
+2) Close the wallet
+
+1
+SQL>administer key management set keystore close;
+3) Open the password based wallet 
+
+1
+SQL>administer key management set keystore open identified by "wallet_password" ;
+4) Retry the original Set Key statement
+
+1
+2
+3
+SQL>ADMINISTER KEY MANAGEMENT SET KEY IDENTIFIED BY "wallet_password" WITH BACKUP USING 'first_key_backup' CONTAINER = ALL;
+ 
+keystore altered.
+5) Finally re-enable auto_login
+
+1
+SQL>administer key management create AUTO_LOGIN keystore from keystore '<wallet directory>' identified by  "wallet_password" ;
