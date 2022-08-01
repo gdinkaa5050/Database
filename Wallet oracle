@@ -1,0 +1,3 @@
+SQL> administer key management create keystore '/u01/app/oracle/admin/orcl/wallet' identified by Welcome123;
+
+SQL> administer key management create auto_login keystore from keystore '/u01/app/oracle/admin/orcl/wallet' identified by Welcome123;
