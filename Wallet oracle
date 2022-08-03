@@ -1,3 +1,53 @@
+fix wallet is not open
+*******************************
+
+alter system set tde_configuration="KEYSTORE_CONFIGURATION=FILE" SCOPE=BOTH;
+
+bounce database
+
+show parameter tde_configuration;
+show parameter wallet;
+
+select wrl_type,status,wrl_parameter from v$encryption_wallet;
+
+ALTER SYSTEM SET ENCRYPTION WALLET OPEN identified by dba12step;
+
+
+
+--if not open,
+
+--cd to wallet_root location
+--mkdir tde
+--copy these files into tde
+    cwallet.sso
+    ewallet.p12
+
+--now
+
+ALTER SYSTEM SET ENCRYPTION WALLET OPEN identified by ju5td0it;
+--check status
+
+select wrl_type,status,wrl_parameter from v$encryption_wallet;
+
+to avoid reopening the wallet run the following
+*********************************************************
+exec dbms_scheduler.set_job_argument_value (job_name => 'wllt_chek_job',argument_position => 1,argument_value => '/software/oracle/admin/<xtst171n>/wallet');
+
+drop directory LOCKING_DIR;
+
+create directory LOCKING_DIR as '/oradata/<xtst171>/logs/lock_file_dir';
+
+alter table uprr_wllt_chek modify (location varchar2(100));
+
+--Run the job
+
+exec dbms_scheduler.run_job('wllt_chek_job');
+
+
+
+************************************************************************************************************************************
+************************************************************************************************************************************
+
 SQL> administer key management create keystore '/u01/app/oracle/admin/orcl/wallet' identified by Welcome123;
 
 SQL> administer key management create auto_login keystore from keystore '/u01/app/oracle/admin/orcl/wallet' identified by Welcome123;
@@ -28,3 +78,15 @@ keystore altered.
 
 1
 SQL>administer key management create AUTO_LOGIN keystore from keystore '<wallet directory>' identified by  "wallet_password" ;
+
+*************************************************************************************************************************************
+*************************************************************************************************************************************
+
+
+-- 4. Create the master key:
+administer key management create key identified by xx with backup;
+select key_id,activation_time from v$encryption_keys;
+
+
+--- 5. In order to create an encrypted table/tablespace the master key should be activated:
+administer key management use key 'ASMmjEzvF0/Uv0IOZ33AXQUAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' identified by xxx with backup;
