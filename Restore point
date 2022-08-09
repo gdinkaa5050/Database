@@ -1,0 +1,15 @@
+SELECT NAME, SCN, TIME, DATABASE_INCARNATION#,
+        GUARANTEE_FLASHBACK_DATABASE,STORAGE_SIZE
+        FROM V$RESTORE_POINT;
+
+
+SELECT NAME, SCN, TIME, DATABASE_INCARNATION#,
+        GUARANTEE_FLASHBACK_DATABASE, STORAGE_SIZE
+        FROM V$RESTORE_POINT
+      WHERE GUARANTEE_FLASHBACK_DATABASE='YES';
+      
+      
+      
+flashback database to restore point before_damage;
+
+alter database open resetlogs;
