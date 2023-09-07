@@ -1,0 +1,45 @@
+df -h 
+df -hT     ---types
+
+cd /u01
+
+du -hsx * | sort -rh | head -10
+
+-- keep cd into the largest directory then you list
+ls -ltrh
+
+-- remove trace file and keep the last onces  --note delete only listener.xml file
+rm -f log_*.xml
+
+note -- you can delete opatch text files.
+
+-- for asm listener log, don't delete them. rather zip them to reduce size
+tar -czvf asmnetlistenerlogs06012023.tar.gz asmnet*.log --remove-files
+
+how to add space to the filesystem
+#vgs
+lvextend -L+1G </filesystem/> --resize
+
+
+--Deleting Opatch logs
+cd /u01/oracle/product/11.2.0.4/db/cfgtoollogs/opatch
+
+#find *<.log> -type f -ctime +30 -exec rm -rf {} +
+
+--example
+find *.txt -type f -ctime +30 -exec rm -rf {} +
+
+
+boot
+-- if your boot is really too high, normally the oem does the cleanup.
+df -h /boot
+--to do kernel clean up
+#kernel_cleanup.sh --purge --keep 2
+type yes
+
+
+
+--to look at var directories
+#sar
+
+--netapp file systems (backup) -- when it is full, put in a ticket ask.cerner
