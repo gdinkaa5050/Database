@@ -1,0 +1,5 @@
+select * from v$dataguard_config;
+
+select name, open_mode, database_role from v$database;
+
+show parameter log_archive_config
