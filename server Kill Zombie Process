@@ -1,0 +1,10 @@
+top
+
+ps aux | egrep "Z|defunct"
+
+ps -o ppid= -p <*****>
+
+kill –s SIGCHLD  Parent_PID
+kill -SIGKILL <*****>
+
+kill -9 Parent_PID
