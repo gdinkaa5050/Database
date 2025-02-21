@@ -89,3 +89,82 @@ Edit
 CREATE GLOBAL TEMPORARY TABLE temp_table (
   col1 NUMBER, col2 VARCHAR2(100)
 ) ON COMMIT DELETE ROWS;
+
+************************************************
+
+1. Check Undo Tablespace Usage (Used & Free Space)
+sql
+Copy
+Edit
+SELECT a.tablespace_name, 
+       a.file_name, 
+       a.bytes/1024/1024 AS size_mb,
+       (a.bytes - NVL(b.bytes, 0))/1024/1024 AS used_mb,
+       NVL(b.bytes, 0)/1024/1024 AS free_mb
+FROM dba_data_files a
+LEFT JOIN (SELECT file_id, SUM(bytes) AS bytes 
+           FROM dba_free_space 
+           GROUP BY file_id) b 
+ON a.file_id = b.file_id
+WHERE a.tablespace_name LIKE 'UNDO%';
+🔹 This shows each UNDO tablespace’s total size, used space, and free space.
+
+2. Check Undo Segment Usage
+sql
+Copy
+Edit
+SELECT tablespace_name, 
+       SUM(bytes)/1024/1024 AS used_space_mb
+FROM dba_undo_extents 
+WHERE status IN ('ACTIVE', 'EXPIRED', 'UNEXPIRED')
+GROUP BY tablespace_name;
+🔹 This helps check the distribution of active and expired undo extents.
+
+3. Check Undo Tablespace Status & Retention
+sql
+Copy
+Edit
+SELECT tablespace_name, 
+       retention, 
+       status 
+FROM dba_tablespaces 
+WHERE contents = 'UNDO';
+🔹 This checks if the undo tablespace is in AUTO mode and its retention settings.
+
+4. Monitor Undo Tablespace Usage in Real-Time
+sql
+Copy
+Edit
+SELECT tablespace_name, 
+       file_id, 
+       file_name, 
+       autoextensible, 
+       bytes/1024/1024 AS size_mb
+FROM dba_data_files
+WHERE tablespace_name LIKE 'UNDO%';
+🔹 This helps check if Autoextend is enabled for undo tablespaces.
+
+5. Check Undo Tablespace Activity
+sql
+Copy
+Edit
+SELECT BEGIN_TIME, END_TIME, UNDOTSN, UNDOBLKS, TXNCOUNT 
+FROM v$undostat 
+ORDER BY BEGIN_TIME DESC;
+🔹 Shows undo space usage over time, helping diagnose high usage periods.
+
+6. Check Undo Tablespace Assigned to Database
+sql
+Copy
+Edit
+SHOW PARAMETER UNDO_TABLESPACE;
+🔹 Displays the currently active UNDO tablespace.
+
+Summary of Commands & When to Use Them
+Command	Purpose
+Query 1	Shows total, used, and free space for UNDO tablespaces
+Query 2	Monitors undo segment usage
+Query 3	Checks undo retention settings
+Query 4	Checks autoextend status
+Query 5	Monitors undo activity over time
+Query 6	Shows active UNDO tablespace
