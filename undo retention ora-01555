@@ -8,3 +8,84 @@ show parameter undo;
 
 select to_char(begin_time, 'DD-MON HH24:MI') begin_time, to_char(end_time, 'DD-MON HH24:MI') end_time, undoblks,
 txncount, maxconcurrency, activeblks, expiredblks, tuned_undoretention, maxquerylen from v$undostat order by begin_time;
+
+****************************************************
+The ORA-01555: Snapshot Too Old error in Oracle typically occurs due to insufficient undo space or long-running queries that require older data versions. Here’s how you can fix it:
+
+1. Identify the Cause
+Run the following query to check the undo tablespace usage:
+
+sql
+Copy
+Edit
+SELECT tablespace_name, file_name, bytes/1024/1024 AS size_mb 
+FROM dba_data_files 
+WHERE tablespace_name = 'UNDOTBS1';
+To check active undo transactions, use:
+
+sql
+Copy
+Edit
+SELECT s.sid, s.serial#, s.username, t.used_ublk, t.used_urec, t.start_time
+FROM v$transaction t, v$session s
+WHERE t.ses_addr = s.saddr;
+2. Increase Undo Tablespace Size
+If your undo tablespace is too small, extend it:
+
+sql
+Copy
+Edit
+ALTER DATABASE DATAFILE '/path_to_undo/undotbs01.dbf' RESIZE 2G;
+Or, add a new undo file:
+
+sql
+Copy
+Edit
+ALTER DATABASE ADD DATAFILE '/path_to_undo/undotbs02.dbf' SIZE 1G;
+3. Adjust Undo Retention Settings
+Modify undo retention to keep undo data longer:
+
+sql
+Copy
+Edit
+ALTER SYSTEM SET UNDO_RETENTION = 900; -- 15 minutes
+If using Automatic Undo Management, set retention guarantee:
+
+sql
+Copy
+Edit
+ALTER DATABASE SET UNDO_RETENTION GUARANTEE;
+4. Optimize Queries to Reduce Undo Usage
+Use BULK COLLECT and FORALL in PL/SQL instead of row-by-row processing.
+Commit in batches instead of committing after every row.
+Use LOB storage options (SECUREFILE LOBs) to avoid excessive undo for LOB operations:
+sql
+Copy
+Edit
+ALTER TABLE my_table MODIFY LOB(my_column) (STORE AS SECUREFILE);
+5. Avoid Long-Running Queries Holding Undo
+Break large queries into smaller transactions.
+Use ORDER BY in queries to fetch recent records first, reducing undo usage.
+Consider Materialized Views for expensive queries.
+6. Check Undo Tablespace Status
+If your undo tablespace is full, move to a larger tablespace:
+
+sql
+Copy
+Edit
+ALTER SYSTEM SET UNDO_TABLESPACE = UNDOTBS2;
+Then drop the old tablespace if necessary:
+
+sql
+Copy
+Edit
+DROP TABLESPACE UNDOTBS1 INCLUDING CONTENTS AND DATAFILES;
+7. Use Temporary Tables for Large Data Processing
+Instead of using undo for large temporary datasets, store intermediate results in Global Temporary Tables (GTTs):
+
+sql
+Copy
+Edit
+CREATE GLOBAL TEMPORARY TABLE temp_table (
+  col1 NUMBER, col2 VARCHAR2(100)
+) ON COMMIT DELETE ROWS;
