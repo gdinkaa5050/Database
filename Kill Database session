@@ -65,3 +65,73 @@ Run this query to confirm that the session no longer exists:
 
 
 SELECT sid, serial#, status FROM v$session WHERE sid = 123;
+
+*************************************************************************
+How to Identify the Process Consuming CPU and Its Corresponding Database Session
+If your database server is experiencing high CPU usage, you need to find the OS process (PID) consuming CPU and map it to the corresponding Oracle session.
+
+🔹 Step 1: Identify High CPU Processes on the OS
+✅ On Linux/Unix
+Run the following command to list the top CPU-consuming processes:
+
+
+top -o %CPU
+OR
+
+
+ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%cpu | head -10
+✔ PID: This is the OS Process ID consuming CPU.
+
+✅ On Windows
+Run the following command in Command Prompt (cmd):
+
+cmd
+
+wmic process get ProcessId,CommandLine,UserModeTime /format:csv | sort /R /+3 | more
+OR
+Check Task Manager → Processes → Sort by CPU Usage.
+
+✔ Note down the PID of the highest CPU-consuming Oracle process.
+
+🔹 Step 2: Map OS Process (PID) to Database Session
+Now, find the database session running the high CPU process.
+
+Run the following query in Oracle:
+
+
+SELECT s.sid, s.serial#, s.username, s.osuser, s.machine, s.program, s.sql_id, p.spid AS os_pid
+FROM v$session s
+JOIN v$process p ON s.paddr = p.addr
+WHERE p.spid = <OS_PID>;
+🔹 Replace <OS_PID> with the process ID found in Step 1.
+
+✔ This will return the Oracle session (SID, SERIAL#) running on that OS process.
+
+🔹 Step 3: Identify the SQL Running in That Session
+Once you have the SID and SERIAL#, check what SQL query is consuming CPU:
+
+
+SELECT sql_id, sql_text
+FROM v$sql
+WHERE sql_id = (SELECT sql_id FROM v$session WHERE sid = <SID>);
+✔ This helps you determine if a long-running or expensive query is causing the high CPU usage.
+
+🔹 Step 4: Kill the Session If Needed
+If the session is causing issues, terminate it:
+
+Kill the session in Oracle
+
+ALTER SYSTEM KILL SESSION '<SID>,<SERIAL#>' IMMEDIATE;
+Example:
+
+
+ALTER SYSTEM KILL SESSION '123,456' IMMEDIATE;
+Kill the OS Process (If Session Doesn't Terminate)
+✅ On Linux
+bash
+
+kill -9 <OS_PID>
+✅ On Windows
+cmd
+
+taskkill /F /PID <OS_PID>
