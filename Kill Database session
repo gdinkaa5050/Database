@@ -1,0 +1,67 @@
+Run the following query to find the active sessions:
+
+
+SELECT sid, serial#, username, osuser, machine, program, status
+FROM v$session
+WHERE status = 'ACTIVE';
+✔ This will list all active sessions.
+
+🔹 Step 2: Identify the Session You Want to Kill
+If you are targeting a specific session, filter by username or program:
+
+
+SELECT sid, serial#, username, osuser, machine, program, status
+FROM v$session
+WHERE username = 'YOUR_USER';
+✔ Note down the SID and SERIAL# of the session to kill.
+
+🔹 Step 3: Kill the Session in the Database
+Run the following command using the SID and SERIAL# you identified:
+
+
+ALTER SYSTEM KILL SESSION 'SID,SERIAL#' IMMEDIATE;
+Example:
+
+
+ALTER SYSTEM KILL SESSION '123,456' IMMEDIATE;
+✔ If the session does not immediately disappear, proceed to Step 4.
+
+🔹 Step 4: Find the Corresponding OS Process (PID)
+After killing the session at the database level, check if it still exists in the OS.
+Run the following query to get the process ID (PID) at the OS level:
+
+
+SELECT s.sid, s.serial#, p.spid AS os_pid, s.username, s.osuser, s.machine, s.program
+FROM v$session s
+JOIN v$process p ON s.paddr = p.addr
+WHERE s.sid = 123;  -- Replace with the actual SID
+✔ Note down the OS PID (column os_pid).
+
+🔹 Step 5: Kill the Process at the OS Level
+✅ On Linux/Unix:
+Run the following command to kill the process:
+
+
+kill -9 <OS_PID>
+Example:
+
+
+kill -9 98765
+✔ Use ps -ef | grep <OS_PID> to confirm if the process is still running.
+
+✅ On Windows:
+Run the following command in Command Prompt (cmd):
+
+
+taskkill /F /PID <OS_PID>
+Example:
+
+
+taskkill /F /PID 98765
+✔ You can also check the process in Task Manager.
+
+🔹 Step 6: Verify the Session is Killed
+Run this query to confirm that the session no longer exists:
+
+
+SELECT sid, serial#, status FROM v$session WHERE sid = 123;
