@@ -107,3 +107,55 @@ sql
 Copy
 Edit
 ALTER SYSTEM SET UNDO_RETENTION = 900;
+
+
+************************************************************
+
+Check Total Size and Used Space of Undo Tablespace
+Run this query in SQL*Plus or SQL Developer:
+
+sql
+Copy
+Edit
+SELECT tablespace_name, 
+       round(sum(bytes)/1024/1024,2) AS total_size_mb, 
+       round(sum(bytes - free_bytes)/1024/1024,2) AS used_space_mb, 
+       round(sum(free_bytes)/1024/1024,2) AS free_space_mb
+FROM (
+    SELECT tablespace_name, bytes, 0 AS free_bytes 
+    FROM dba_data_files 
+    WHERE tablespace_name LIKE 'UNDO%'
+    UNION ALL
+    SELECT tablespace_name, 0 AS bytes, bytes AS free_bytes 
+    FROM dba_free_space 
+    WHERE tablespace_name LIKE 'UNDO%'
+)
+GROUP BY tablespace_name;
+Output Example:
+
+yaml
+Copy
+Edit
+TABLESPACE_NAME   TOTAL_SIZE_MB   USED_SPACE_MB   FREE_SPACE_MB
+---------------   -------------   -------------   -------------
+UNDOTBS1         5000            3200            1800
+2. Check Undo Usage from v$UNDOSTAT
+For a real-time view of undo space usage in the last 30 minutes:
+
+sql
+Copy
+Edit
+SELECT SUM(undoblks) * 8192 / 1024 / 1024 AS used_undo_mb
+FROM v$undostat 
+WHERE begin_time > SYSDATE - (30/1440);
+3. Check Undo Tablespace Usage per PDB (Multitenant)
+If using a Pluggable Database (PDB), use:
+
+sql
+Copy
+Edit
+SELECT p.name AS pdb_name, u.tablespace_name, 
+       round(SUM(u.bytes)/1024/1024,2) AS undo_size_mb
+FROM cdb_undo_extents u
+JOIN v$containers p ON u.con_id = p.con_id
+GROUP BY p.name, u.tablespace_name;
