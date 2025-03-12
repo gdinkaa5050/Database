@@ -1,0 +1,142 @@
+1. Check SCAN Listener Status
+Run the following command on any Oracle RAC node to check the status of the SCAN Listener:
+
+bash
+Copy
+Edit
+srvctl status scan_listener
+Example output:
+
+csharp
+Copy
+Edit
+SCAN Listener LISTENER_SCAN1 is not running
+SCAN Listener LISTENER_SCAN2 is running on node rac2
+SCAN Listener LISTENER_SCAN3 is running on node rac3
+If any SCAN listener is down, proceed to troubleshooting.
+
+2. Restart the SCAN Listener
+If a SCAN listener is down, restart it using:
+
+bash
+Copy
+Edit
+srvctl start scan_listener
+Then verify again:
+
+bash
+Copy
+Edit
+srvctl status scan_listener
+3. Check if the Listener Process is Running
+Verify if the listener process is running:
+
+bash
+Copy
+Edit
+ps -ef | grep tnslsnr
+If you don’t see TNSLSNR for SCAN listeners, it means the process is not running.
+
+Try manually starting it:
+
+bash
+Copy
+Edit
+lsnrctl start LISTENER_SCAN1
+If it still fails, check the logs for errors:
+
+bash
+Copy
+Edit
+cat $ORACLE_HOME/diag/tnslsnr/$(hostname)/listener_scan1/alert/log.xml | tail -20
+4. Verify SCAN Name Resolution
+Check if the SCAN name is resolving correctly:
+
+bash
+Copy
+Edit
+nslookup your-scan-name
+Example:
+
+bash
+Copy
+Edit
+nslookup scan-cluster.example.com
+Expected output should return multiple IP addresses. If not, check with your DNS administrator.
+
+To verify the VIPs:
+
+bash
+Copy
+Edit
+srvctl config scan
+It should show multiple SCAN VIPs.
+
+5. Check Listener Configuration
+Validate the SCAN listener configuration file:
+
+bash
+Copy
+Edit
+cat $GRID_HOME/network/admin/listener.ora
+Ensure that the LISTENER_SCAN1, LISTENER_SCAN2, etc., are correctly defined.
+
+If the file is missing or corrupted, recreate it and restart the listener:
+
+bash
+Copy
+Edit
+srvctl stop scan_listener
+srvctl remove scan_listener
+srvctl add scan_listener -listener LISTENER_SCAN1
+srvctl start scan_listener
+6. Verify Firewall and Port Accessibility
+Ensure the firewall is not blocking the default listener port (1521):
+
+bash
+Copy
+Edit
+netstat -tulnp | grep 1521
+If the listener is not listed, check the firewall settings:
+
+bash
+Copy
+Edit
+iptables -L | grep 1521
+firewalld --list-ports | grep 1521
+If blocked, allow the port:
+
+bash
+Copy
+Edit
+firewall-cmd --permanent --add-port=1521/tcp
+firewall-cmd --reload
+7. Check Cluster Resources
+Ensure all cluster resources are online:
+
+bash
+Copy
+Edit
+crsctl stat res -t
+If the SCAN VIP is offline, bring it up:
+
+bash
+Copy
+Edit
+crsctl start res ora.scan1.vip
+8. Restart Grid Infrastructure (If Necessary)
+If all else fails, restart the Grid Infrastructure on the affected node:
+
+bash
+Copy
+Edit
+crsctl stop crs
+crsctl start crs
+Final Verification
+After fixing the issue, verify:
+
+bash
+Copy
+Edit
+srvctl status scan_listener
+Ensure OEM now shows the listener as UP.
