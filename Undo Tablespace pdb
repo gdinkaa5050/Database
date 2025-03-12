@@ -1,0 +1,109 @@
+1. Check Undo Usage in a Pluggable Database
+Since Undo Tablespace is shared at the CDB level, check the undo usage for the entire container first.
+
+A. Check Undo Usage in CDB (Common Undo Mode)
+Run this in the CDB root (CDB$ROOT):
+
+sql
+Copy
+Edit
+SELECT tablespace_name, file_id, bytes/1024/1024 AS size_mb, status
+FROM cdb_undo_extents
+WHERE tablespace_name = 'UNDOTBS1';
+This will show how much undo is being used by the entire database.
+
+B. Check Undo Usage per PDB
+If you want to see undo usage per Pluggable Database (PDB):
+
+sql
+Copy
+Edit
+SELECT s.con_id, p.name AS pdb_name, u.tablespace_name, SUM(u.bytes)/1024/1024 AS undo_size_mb
+FROM cdb_undo_extents u
+JOIN v$containers p ON u.con_id = p.con_id
+JOIN v$session s ON s.con_id = u.con_id
+GROUP BY s.con_id, p.name, u.tablespace_name;
+This helps determine which PDB is consuming the most undo.
+
+2. Fix High Undo Usage in a Pluggable Database
+If a PDB is consuming too much undo, take these steps:
+
+A. Identify Active Sessions Using Undo
+Check which sessions are generating the most undo:
+
+sql
+Copy
+Edit
+SELECT s.sid, s.serial#, s.username, t.used_ublk * 8192 / 1024 / 1024 AS undo_mb, s.program
+FROM v$transaction t
+JOIN v$session s ON t.ses_addr = s.saddr
+ORDER BY undo_mb DESC;
+👉 If an unnecessary session is using excessive undo, kill the session:
+
+sql
+Copy
+Edit
+ALTER SYSTEM KILL SESSION 'SID,SERIAL#' IMMEDIATE;
+B. Check Long-Running Queries Consuming Undo
+Find active queries that are consuming undo space:
+
+sql
+Copy
+Edit
+SELECT sql_id, sql_text, elapsed_time/1000000 AS elapsed_sec
+FROM v$sql
+WHERE elapsed_time > 10000000
+ORDER BY elapsed_time DESC;
+👉 If a query is running too long, consider optimizing it.
+
+C. Check Undo Tablespace Usage
+Find out how much of the Undo Tablespace is used:
+
+sql
+Copy
+Edit
+SELECT tablespace_name, file_name, bytes/1024/1024 AS size_mb, autoextensible
+FROM dba_data_files
+WHERE tablespace_name LIKE 'UNDO%';
+👉 If needed, add more space to Undo Tablespace:
+
+sql
+Copy
+Edit
+ALTER DATABASE DATAFILE '/u01/app/oracle/oradata/undotbs01.dbf' RESIZE 5G;
+or add a new undo tablespace:
+
+sql
+Copy
+Edit
+CREATE UNDO TABLESPACE UNDOTBS2 DATAFILE '/u02/oradata/undotbs02.dbf' SIZE 2G AUTOEXTEND ON;
+👉 Then switch to the new undo tablespace:
+
+sql
+Copy
+Edit
+ALTER SYSTEM SET UNDO_TABLESPACE = UNDOTBS2;
+D. Enable Local Undo (If Needed)
+If your PDB uses shared undo (default in Oracle 12c and above), you can enable local undo for better management:
+
+sql
+Copy
+Edit
+ALTER DATABASE LOCAL UNDO ON;
+👉 Restart the database after enabling local undo.
+
+3. Prevent Future High Undo Usage
+To avoid excessive undo consumption in the future: ✅ Use proper indexing to speed up transactions.
+✅ Commit frequently in long-running transactions to release undo space.
+✅ Monitor undo retention:
+
+sql
+Copy
+Edit
+SHOW PARAMETER UNDO_RETENTION;
+👉 If needed, increase undo retention:
+
+sql
+Copy
+Edit
+ALTER SYSTEM SET UNDO_RETENTION = 900;
