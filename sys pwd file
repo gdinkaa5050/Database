@@ -1,0 +1,28 @@
+If you're working on a backup alert that says invalid un/pw for sys and the sys pw doesnt work. These are things you want to try:
+	1. check if the orapwd file exists for the db and is being utilized:
+		1. srvctl config database -d cadmin|grep "Password file"
+		2. if blank then recreate the orapwdfile
+			1. Run the following as the oracle user (changing the DB name etc)
+				1. $ORACLE_HOME/bin/orapwd dbuniquename=CM0685 file='+P392_DG1/CADMIN/orapwcadmin' entries=30 password=<pw> format=12
+				2. Now you should see the orapwd file in ASMCMD in +P392_DG1/CADMIN/PASSWORD
+					1. ASMCMD> ls
+					2. pwdcadmin.1130.1195547995
+				3. Once youve confirmed the pw is there, modify the orapwd file location to point to there
+					1. srvctl modify database -db CADMIN -pwfile +P392_DG1/CADMIN/PASSWORD/pwdcadmin.1130.1195547995
+				4. Confirm the db is using the correct orapwd file with srvctl config database -d cadmin|grep "Password file"
+				5. Once confirmed sys pw should work
+**If you do NOT know the sys pw or if it's not in vault for the DB (admin uses a different syspw) you can use the following to decrypt the TPW line in the rman file:
+- log into sthstndb12
+	• su - oracle
+	• /atg/common/version3_0/bin/perlf -f translate -a <insert TPW line here from RMAN file in /mnt/db_backup/files/ADMIN>
+	• ex: /atg/common/version3_0/bin/perlf -f translate -a flf!nqzvaflf~pauf-c847-fpna:!ezna_pnqzva.jbeyq
+	• then you'll see the connect string it's using
+
+
+
+Just to specify, the password file creation above only works for 19c DBs. For 11g, you can do
+
+$ORACLE_HOME/bin/orapwd file=$ORACLE_HOME/dbs/orapw<sid> password=<password> force=y
+
+
+yup good call 12c+ the orapwd is in asmcmd 11g theyre in the dbs directory on the OS 
