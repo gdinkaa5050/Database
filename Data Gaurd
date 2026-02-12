@@ -1,0 +1,8 @@
+SELECT
+    (SELECT COUNT(*) FROM dba_data_files) AS datafile_count,
+    (SELECT COUNT(*) FROM dba_temp_files) AS tempfile_count,
+    (SELECT value FROM v$parameter WHERE name='db_files') AS db_files_limit,
+    ((SELECT value FROM v$parameter WHERE name='db_files') -
+     ((SELECT COUNT(*) FROM dba_data_files) +
+      (SELECT COUNT(*) FROM dba_temp_files))) AS remaining_files
+FROM dual;
