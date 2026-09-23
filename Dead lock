@@ -24,3 +24,19 @@ WHERE c.constraint_type = 'R'
       AND ic.table_name = cc.table_name
       AND ic.column_name = cc.column_name
       AND ic.column_position = cc.position);
+
+
+
+
+
+SELECT inst_id, sid, serial#, username, status, sql_id, prev_sql_id,
+       event, last_call_et, row_wait_obj#
+FROM gv$session
+WHERE (inst_id,sid) IN ((6,1992),(5,1575),(2,48),(6,4482),(5,997),(5,1661));
+
+SELECT owner, object_name FROM dba_objects
+WHERE object_id = &row_wait_obj;
+
+SELECT DISTINCT sql_id, sql_fulltext FROM gv$sql
+WHERE sql_id IN ('6zqywlmrrshrz','38z2dr4ssxswn');
+
