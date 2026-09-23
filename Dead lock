@@ -1,0 +1,26 @@
+SELECT inst_id, sid, serial#, username, program, module,
+       sql_id, event, blocking_instance, blocking_session,
+       seconds_in_wait
+FROM gv$session
+WHERE (inst_id = 5 AND sid IN (1661, 997))
+   OR blocking_session IS NOT NULL;
+
+
+SELECT sql_id, sql_text FROM gv$sql
+WHERE sql_id IN ('&sql_id') AND ROWNUM = 1;
+
+
+
+
+SELECT c.owner, c.table_name, c.constraint_name, cc.column_name
+FROM dba_constraints c
+JOIN dba_cons_columns cc
+  ON c.owner = cc.owner AND c.constraint_name = cc.constraint_name
+WHERE c.constraint_type = 'R'
+  AND c.owner NOT IN ('SYS','SYSTEM')
+  AND NOT EXISTS (
+    SELECT 1 FROM dba_ind_columns ic
+    WHERE ic.table_owner = cc.owner
+      AND ic.table_name = cc.table_name
+      AND ic.column_name = cc.column_name
+      AND ic.column_position = cc.position);
