@@ -40,3 +40,32 @@ WHERE object_id = &row_wait_obj;
 SELECT DISTINCT sql_id, sql_fulltext FROM gv$sql
 WHERE sql_id IN ('6zqywlmrrshrz','38z2dr4ssxswn');
 
+############
+set lines 300 pages 200 long 20000
+col username for a10
+col event for a30
+col program for a25
+
+
+SELECT s.inst_id, s.sid, s.serial#, s.username, s.status,
+       s.sql_id, s.prev_sql_id, s.event, s.last_call_et,
+       (SELECT COUNT(*) FROM gv$session w
+         WHERE w.blocking_instance = s.inst_id
+           AND w.blocking_session = s.sid) AS waiters
+FROM gv$session s
+WHERE s.blocking_session IS NULL
+  AND EXISTS (SELECT 1 FROM gv$session w
+              WHERE w.blocking_instance = s.inst_id
+                AND w.blocking_session = s.sid)
+ORDER BY waiters DESC;
+
+
+SELECT o.owner, o.object_name, o.object_type, COUNT(*) AS waiters
+FROM gv$session s
+JOIN cdb_objects o
+  ON o.object_id = s.row_wait_obj# AND o.con_id = s.con_id
+WHERE s.event = 'enq: TX - row lock contention'
+GROUP BY o.owner, o.object_name, o.object_type;
+
+SELECT DISTINCT sql_id, sql_text FROM gv$sqlarea
+WHERE sql_id IN ('6zqywlmrrshrz','38z2dr4ssxswn','5zkqljmacd2rd');
