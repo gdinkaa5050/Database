@@ -1,0 +1,23 @@
+COLUMN username       FORMAT A20
+COLUMN account_status FORMAT A20
+COLUMN profile        FORMAT A20
+
+SELECT username, account_status, profile,
+       TO_CHAR(last_login,'MM/DD/YY HH24:MI') last_login,
+       TO_CHAR(lock_date,'MM/DD/YY HH24:MI') lock_date,
+       TO_CHAR(expiry_date,'MM/DD/YY HH24:MI') expiry
+FROM   dba_users
+WHERE  username = 'CERN_DBSTATS';
+
+
+COLUMN os_username FORMAT A15
+COLUMN userhost    FORMAT A25
+COLUMN client_program_name FORMAT A25
+
+SELECT TO_CHAR(event_timestamp,'MM/DD/YY HH24:MI') ts,
+       os_username, userhost, client_program_name, return_code
+FROM   unified_audit_trail
+WHERE  dbusername = 'CERN_DBSTATS'
+AND    return_code <> 0
+ORDER  BY event_timestamp DESC
+FETCH FIRST 20 ROWS ONLY;
