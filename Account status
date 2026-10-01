@@ -21,3 +21,27 @@ WHERE  dbusername = 'CERN_DBSTATS'
 AND    return_code <> 0
 ORDER  BY event_timestamp DESC
 FETCH FIRST 20 ROWS ONLY;
+
+
+--11g db
+SELECT u.username, u.account_status, u.profile,
+       TO_CHAR(u.lock_date,'MM/DD/YY HH24:MI') lock_date,
+       TO_CHAR(u.expiry_date,'MM/DD/YY HH24:MI') expiry,
+       s.lcount failed_count
+FROM   dba_users u
+JOIN   sys.user$ s ON s.name = u.username
+WHERE  u.username = 'CERN_DBSTATS';
+
+
+COLUMN os_username FORMAT A15
+COLUMN userhost    FORMAT A25
+COLUMN terminal    FORMAT A15
+
+SELECT * FROM (
+  SELECT TO_CHAR(timestamp,'MM/DD/YY HH24:MI') ts,
+         os_username, userhost, terminal, returncode
+  FROM   dba_audit_session
+  WHERE  username = 'CERN_DBSTATS'
+  AND    returncode <> 0
+  ORDER  BY timestamp DESC
+) WHERE ROWNUM <= 20;
