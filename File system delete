@@ -1,0 +1,5 @@
+cd /u02/diag/tnslsnr/slmtkdb2/listener/trace
+tar -czvf listener_6.log_$(date +%m_%d_%Y_%H%M).tgz listener_6.log && cp /dev/null listener_6.log
+
+
+tar -czvf listener_rotated_$(date +%m_%d_%Y).tgz listener_13.log listener_1.log listener_8.log listener_4.log listener_11.log && rm listener_13.log listener_1.log listener_8.log listener_4.log listener_11.log
