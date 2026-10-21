@@ -1,14 +1,15 @@
+--find process id
 info MTREP03 detail
 
 
-
+--find its session
 SELECT sid, serial#, username, status, event, wait_class,
        seconds_in_wait, blocking_session, sql_id, last_call_et
 FROM v$session
 WHERE process = '<PID from step 1>'
    OR LOWER(program) LIKE '%replicat%';
 
-
+--lookup the blocker
 SELECT sid, serial#, username, machine, program, status, sql_id, last_call_et
 FROM v$session WHERE sid = <blocking_session>;
 
@@ -20,3 +21,12 @@ SELECT sql_fulltext FROM v$sqlarea WHERE sql_id = '<sql_id>';
 SELECT owner, job_name, session_id, elapsed_time
 FROM dba_scheduler_running_jobs
 WHERE session_id = 1422;
+
+
+--check of hours of running session is normal 
+SELECT TO_CHAR(actual_start_date, 'YYYY-MM-DD HH24:MI') AS started,
+       run_duration, status
+FROM dba_scheduler_job_run_details
+WHERE owner = 'PCLADB' AND job_name = 'MT_PURGE_CE_FAMILY'
+ORDER BY actual_start_date DESC
+FETCH FIRST 10 ROWS ONLY;
