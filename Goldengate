@@ -16,3 +16,7 @@ FROM v$session WHERE sid = <blocking_session>;
 SELECT sql_fulltext FROM v$sqlarea WHERE sql_id = '<sql_id>';
 
 
+--identify the job
+SELECT owner, job_name, session_id, elapsed_time
+FROM dba_scheduler_running_jobs
+WHERE session_id = 1422;
