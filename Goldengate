@@ -30,3 +30,9 @@ FROM dba_scheduler_job_run_details
 WHERE owner = 'PCLADB' AND job_name = 'MT_PURGE_CE_FAMILY'
 ORDER BY actual_start_date DESC
 FETCH FIRST 10 ROWS ONLY;
+
+
+
+
+
+Scheduler job PCLADB.MT_PURGE_CE_FAMILY runs a large DELETE on PCLADB.CLINICAL_EVENT (sql_id 036j507cshdds) in long transactions. While it runs, it holds row locks that block GoldenGate replicat MTREP03 (enq: TX - row lock contention). That causes replication lag and alert 724DTV_MT_GG_MTREP_LAG_2H (see INC000067504472).
